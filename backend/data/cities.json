@@ -1,0 +1,10 @@
+[
+  {
+    "slug": "hyderabad",
+    "name": "Hyderabad",
+    "region": "Telangana",
+    "country": "India",
+    "is_launch_city": true,
+    "active": true
+  }
+]

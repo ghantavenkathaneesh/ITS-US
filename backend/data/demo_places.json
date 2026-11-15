@@ -1,0 +1,22 @@
+[
+  {
+    "seed_key": "hyderabad-city-walk-demo",
+    "city_slug": "hyderabad",
+    "name": "City walk idea (DEMO)",
+    "description": "DEMO CONTENT ONLY. This placeholder suggests a flexible neighborhood walk; it is not a vetted route, guide service, or bookable experience. Replace it with locally reviewed place data before production.",
+    "category": "Sample itinerary anchor",
+    "area": "Hyderabad",
+    "tags": ["DEMO", "walking"],
+    "is_demo": true
+  },
+  {
+    "seed_key": "hyderabad-food-discovery-demo",
+    "city_slug": "hyderabad",
+    "name": "Food discovery idea (DEMO)",
+    "description": "DEMO CONTENT ONLY. This placeholder suggests learning about local food neighborhoods without naming venues; it is not a restaurant listing and implies no vendor, price, opening time, or availability. Replace it with locally reviewed place data before production.",
+    "category": "Sample itinerary anchor",
+    "area": "Hyderabad",
+    "tags": ["DEMO", "food"],
+    "is_demo": true
+  }
+]
