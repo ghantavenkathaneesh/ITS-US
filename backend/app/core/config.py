@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import EmailStr, SecretStr, field_validator, model_validator
+from pydantic import EmailStr, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_database: str = "its_us"
+    mongodb_max_pool_size: int = Field(default=50, ge=1, le=500)
+    allow_degraded_startup: bool = True
+    seed_demo_data: bool = True
     jwt_secret: SecretStr
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30

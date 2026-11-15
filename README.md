@@ -15,15 +15,15 @@ ITS US is under active development. The web and API foundations, account registr
 
 ## Run locally
 
-1. Copy `.env.example` to `.env` and set a random `JWT_SECRET` (at least 32 characters).
+1. Copy `.env.example` to `.env` and set a random `JWT_SECRET` (at least 32 characters). The example URI is for the Compose MongoDB container.
 2. Start the full stack with `docker compose up --build`.
 3. Open the web app at http://localhost:3000 and the API docs at http://localhost:8000/docs.
 
-For frontend-only work, run `cd frontend && npm install && npm run dev`. For the API, create a Python 3.12 virtual environment, run `pip install -e '.[dev]'` from `backend`, then `uvicorn app.main:app --reload`.
+For frontend-only work, run `cd frontend && npm install && npm run dev`. For the API, create a Python 3.12 virtual environment, set `MONGODB_URI=mongodb://localhost:27017`, run `pip install -e '.[dev]'` from `backend`, then `uvicorn app.main:app --reload`.
 
 ## Configuration
 
-See `.env.example`. Never commit `.env` or credentials. The application can start without MongoDB or an OpenAI key in development; database-backed features report service unavailability gracefully, and AI planning returns an unavailable response when `OPENAI_API_KEY` is not configured.
+See `.env.example`. Never commit `.env` or credentials. In development, the API can start without MongoDB when `ALLOW_DEGRADED_STARTUP=true`; database-backed features report service unavailability gracefully. For a pilot, set `ALLOW_DEGRADED_STARTUP=false` and `SEED_DEMO_DATA=false`, then provide a MongoDB Atlas URI in the private environment. AI planning returns an unavailable response when `OPENAI_API_KEY` is not configured. See [the pilot runbook](docs/pilot-runbook.md) for Atlas setup and readiness checks.
 
 ## Authentication API
 
@@ -39,6 +39,7 @@ See `.env.example`. Never commit `.env` or credentials. The application can star
 - `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/{id}`, `PUT /api/v1/trips/{id}`, and `DELETE /api/v1/trips/{id}` manage only the authenticated traveler's saved plans. Place references must be published in the selected city.
 - `POST /api/v1/bookings` sends a request to a published guide; `GET /api/v1/bookings` and `GET /api/v1/bookings/{id}` show only the current traveler's requests; `GET /api/v1/bookings/guide` shows requests only for the signed-in guide's own profile; `POST /api/v1/bookings/{id}/cancel` cancels a still-requested traveler request. No acceptance or payment is implied.
 - `POST /api/v1/messages` sends a message tied to an active booking request. `GET /api/v1/messages/conversations` and `GET /api/v1/messages/conversations/{id}` are scoped to the traveler and guide who participate in that booking.
+- `GET /api/v1/health/live` reports that the API process is alive. `GET /api/v1/health/ready` returns success only when MongoDB answers a ping.
 
 Passwords are stored as Argon2 hashes. Access tokens are signed with `JWT_SECRET`; authenticated requests reload the account from MongoDB so current role changes take effect.
 
@@ -56,7 +57,7 @@ docker-compose.yml
 
 Cities are database records, not code branches: Hyderabad is seeded from `backend/data/cities.json`, and additional destinations can be added to that data file. Seed records are inserted only once and won't overwrite later database edits. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` before first startup to bootstrap an initial admin; both are optional, and an existing account is never silently promoted. Admin credentials are read from environment variables and never stored in the repository.
 
-The Hyderabad starter catalog contains two visible entries labeled **DEMO**. They are placeholders rather than real venues or bookable experiences, and are included only to exercise the planner and city page. Replace or remove them through the admin place API before production use. Generated itineraries can only reference published place IDs; the backend rejects unknown IDs and unsupported price, opening-time, or availability claims. Plans are not persisted in this stage.
+The Hyderabad starter catalog contains two visible entries labeled **DEMO**. They are placeholders rather than real venues or bookable experiences, and are included only to exercise the planner and city page. Disable `SEED_DEMO_DATA` and review existing catalog records before a pilot. Generated itineraries can only reference published place IDs; the backend rejects unknown IDs and unsupported price, opening-time, or availability claims. A generated draft is saved only after the traveler chooses **Save to My Trips**.
 
 ## Quality checks
 

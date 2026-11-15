@@ -75,29 +75,50 @@ async def seed_demo_places(database: AsyncDatabase[Any]) -> None:
             logger.info("Added demo catalog record: %s", place.seed_key)
 
 
+async def hide_seeded_demo_places(database: AsyncDatabase[Any]) -> None:
+    """Keep built-in demo examples out of the public catalog when seeding is disabled."""
+
+    result = await database.places.update_many(
+        {"demo_key": {"$exists": True}, "status": "published"},
+        {"$set": {"status": "draft", "updated_at": datetime.now(UTC)}},
+    )
+    if result.modified_count:
+        logger.info("Hidden %s seeded demo place(s)", result.modified_count)
+
+
 async def open_mongo(settings: Settings) -> AsyncMongoClient:
     """Open MongoDB and create required indexes."""
 
     client = AsyncMongoClient(
         settings.mongodb_uri,
-        serverSelectionTimeoutMS=3000,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+        maxPoolSize=settings.mongodb_max_pool_size,
+        appname="its-us-api",
         tz_aware=True,
     )
-    await client.admin.command("ping")
-    database = client[settings.mongodb_database]
-    await database.users.create_index("email", unique=True)
-    await database.cities.create_index("slug", unique=True)
-    await database.guides.create_index("owner_id", unique=True)
-    await database.guides.create_index([("city_id", 1), ("status", 1)])
-    await database.places.create_index([("city_id", 1), ("category", 1)])
-    await database.places.create_index("demo_key", unique=True, sparse=True)
-    await database.trips.create_index([("user_id", 1), ("updated_at", -1)])
-    await database.bookings.create_index([("user_id", 1), ("created_at", -1)])
-    await database.bookings.create_index([("guide_owner_id", 1), ("created_at", -1)])
-    await database.reviews.create_index([("guide_id", 1), ("created_at", -1)])
-    await database.messages.create_index([("conversation_id", 1), ("created_at", 1)])
-    await database.messages.create_index([("participant_ids", 1), ("created_at", -1)])
-    await seed_initial_cities(database)
-    await seed_demo_places(database)
-    await bootstrap_admin(database, settings)
+    try:
+        await client.admin.command("ping")
+        database = client[settings.mongodb_database]
+        await database.users.create_index("email", unique=True)
+        await database.cities.create_index("slug", unique=True)
+        await database.guides.create_index("owner_id", unique=True)
+        await database.guides.create_index([("city_id", 1), ("status", 1)])
+        await database.places.create_index([("city_id", 1), ("category", 1)])
+        await database.places.create_index("demo_key", unique=True, sparse=True)
+        await database.trips.create_index([("user_id", 1), ("updated_at", -1)])
+        await database.bookings.create_index([("user_id", 1), ("created_at", -1)])
+        await database.bookings.create_index([("guide_owner_id", 1), ("created_at", -1)])
+        await database.reviews.create_index([("guide_id", 1), ("created_at", -1)])
+        await database.messages.create_index([("conversation_id", 1), ("created_at", 1)])
+        await database.messages.create_index([("participant_ids", 1), ("created_at", -1)])
+        await seed_initial_cities(database)
+        if settings.seed_demo_data:
+            await seed_demo_places(database)
+        else:
+            await hide_seeded_demo_places(database)
+        await bootstrap_admin(database, settings)
+    except BaseException:
+        await client.close()
+        raise
     return client

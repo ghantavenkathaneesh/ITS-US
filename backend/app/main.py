@@ -34,8 +34,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         client = await open_mongo(settings)
         app.state.mongo = client
-    except PyMongoError:
-        logger.warning("MongoDB unavailable; starting API in degraded mode")
+    except PyMongoError as error:
+        logger.error("MongoDB initialization failed (%s)", type(error).__name__)
+        if not settings.allow_degraded_startup:
+            raise RuntimeError("MongoDB is required but unavailable") from None
+        logger.warning("Starting API in degraded mode because ALLOW_DEGRADED_STARTUP is enabled")
         if client is not None:
             await client.close()
     yield
